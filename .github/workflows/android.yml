@@ -40,20 +40,32 @@ jobs:
         run: ./gradlew bundleDevRelease
         if: github.ref == 'refs/heads/dev'
 
+      - name: Sign AAB for Dev
+        id: signDev
+        uses: r0adkll/sign-android-release@v1
+        with:
+          releaseDirectory: app/build/outputs/bundle/devRelease
+          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
+          alias: ${{ secrets.ALIAS }}
+          keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
+          keyPassword: ${{ secrets.KEY_PASSWORD }}
+        if: github.ref == 'refs/heads/dev'
+
       - name: Build Release AAB for Prod
         id: buildProdRelease
         run: ./gradlew bundleProdRelease
         if: github.ref == 'refs/heads/master'
 
-      - name: Sign AAB
-        id: sign
+      - name: Sign AAB for Prod
+        id: signProd
         uses: r0adkll/sign-android-release@v1
         with:
-          releaseDirectory: app/build/outputs/bundle/release
+          releaseDirectory: app/build/outputs/bundle/prodRelease
           signingKeyBase64: ${{ secrets.SIGNING_KEY }}
           alias: ${{ secrets.ALIAS }}
           keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
           keyPassword: ${{ secrets.KEY_PASSWORD }}
+        if: github.ref == 'refs/heads/master'
 
       - name: Upload AAB
         id: uploadArtifact
