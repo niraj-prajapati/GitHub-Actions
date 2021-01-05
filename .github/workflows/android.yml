@@ -35,9 +35,15 @@ jobs:
         id: build
         run: ./gradlew build
 
-      - name: Build Release AAB
-        id: buildRelease
-        run: ./gradlew bundleRelease
+      - name: Build Release AAB for Dev
+        id: buildDevRelease
+        run: ./gradlew bundleDevRelease
+        if: github.ref == 'refs/heads/dev'
+
+      - name: Build Release AAB for Prod
+        id: buildProdRelease
+        run: ./gradlew bundleProdRelease
+        if: github.ref == 'refs/heads/master'
 
       - name: Sign AAB
         id: sign
@@ -54,4 +60,5 @@ jobs:
         uses: actions/upload-artifact@v1
         with:
           name: app
-          path: app/build/outputs/bundle/release/app-release.aab
+          path: |
+            **/*.aab
