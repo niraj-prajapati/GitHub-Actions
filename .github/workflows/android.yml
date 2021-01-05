@@ -3,6 +3,7 @@ name: Android CI
 on:
   push:
     branches:
+      - 'dev'
       - 'master'
 
 jobs:
@@ -34,23 +35,41 @@ jobs:
         id: build
         run: ./gradlew build
 
-      - name: Build Release AAB
-        id: buildRelease
-        run: ./gradlew bundleRelease
+      - name: Build Release AAB for Dev
+        id: buildDevRelease
+        run: ./gradlew bundleDevRelease
+        if: github.ref == 'refs/heads/dev'
 
-      - name: Sign AAB
-        id: sign
+      - name: Sign AAB for Dev
+        id: signDev
         uses: r0adkll/sign-android-release@v1
         with:
-          releaseDirectory: app/build/outputs/bundle/release
+          releaseDirectory: app/build/outputs/bundle/devRelease
           signingKeyBase64: ${{ secrets.SIGNING_KEY }}
           alias: ${{ secrets.ALIAS }}
           keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
           keyPassword: ${{ secrets.KEY_PASSWORD }}
+        if: github.ref == 'refs/heads/dev'
+
+      - name: Build Release AAB for Prod
+        id: buildProdRelease
+        run: ./gradlew bundleProdRelease
+        if: github.ref == 'refs/heads/master'
+
+      - name: Sign AAB for Prod
+        id: signProd
+        uses: r0adkll/sign-android-release@v1
+        with:
+          releaseDirectory: app/build/outputs/bundle/prodRelease
+          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
+          alias: ${{ secrets.ALIAS }}
+          keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
+          keyPassword: ${{ secrets.KEY_PASSWORD }}
+        if: github.ref == 'refs/heads/master'
 
       - name: Upload AAB
         id: uploadArtifact
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v2
         with:
           name: app
-          path: app/build/outputs/bundle/release/app-release.aab
+          path: app/build/outputs/bundle/**/*.aab
