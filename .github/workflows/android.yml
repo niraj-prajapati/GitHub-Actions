@@ -73,4 +73,5 @@ jobs:
         with:
           name: app
           path: |
+            **/*.apk
             **/*.aab
