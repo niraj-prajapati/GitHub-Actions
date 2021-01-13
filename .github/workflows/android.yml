@@ -11,6 +11,12 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    env:
+      ALIAS: ${{secrets.ALIAS}}
+      KEY_STORE_PASSWORD: ${{secrets.KEY_STORE_PASSWORD}}
+      KEY_PASSWORD: ${{secrets.KEY_PASSWORD}}
+      TESTFAIRY_API_KEY: ${{secrets.TESTFAIRY_API_KEY}}
+
     steps:
       - uses: actions/checkout@v2
 
@@ -31,45 +37,30 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build with Gradle
-        id: build
-        run: ./gradlew build
+      - name: Bump version
+        uses: chkfung/android-version-actions@v1.1
+        with:
+          gradlePath: app/build.gradle
+          versionCode: ${{github.run_number}}
+          versionName: '1.0.${{github.run_number}}'
 
-      - name: Build Release AAB for Dev
+      - name: Run Workflow
+        id: generateKeystore
+        uses: timheuer/base64-to-file@v1
+        with:
+          fileName: 'keystore.jks'
+          encodedString: ${{secrets.SIGNING_KEY}}
+
+      - name: Upload Release APK for Dev on TestFairy
         id: buildDevRelease
-        run: ./gradlew bundleDevRelease
+        env:
+          SIGNING_KEY: ${{steps.generateKeystore.outputs.filePath}}
+        run: ./gradlew testfairyDevRelease
         if: github.ref == 'refs/heads/dev'
 
-      - name: Sign AAB for Dev
-        id: signDev
-        uses: r0adkll/sign-android-release@v1
-        with:
-          releaseDirectory: app/build/outputs/bundle/devRelease
-          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
-          alias: ${{ secrets.ALIAS }}
-          keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
-          keyPassword: ${{ secrets.KEY_PASSWORD }}
-        if: github.ref == 'refs/heads/dev'
-
-      - name: Build Release AAB for Prod
+      - name: Upload Release APK for Prod on TestFairy
         id: buildProdRelease
-        run: ./gradlew bundleProdRelease
+        env:
+          SIGNING_KEY: ${{steps.generateKeystore.outputs.filePath}}
+        run: ./gradlew testfairyProdRelease
         if: github.ref == 'refs/heads/master'
-
-      - name: Sign AAB for Prod
-        id: signProd
-        uses: r0adkll/sign-android-release@v1
-        with:
-          releaseDirectory: app/build/outputs/bundle/prodRelease
-          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
-          alias: ${{ secrets.ALIAS }}
-          keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
-          keyPassword: ${{ secrets.KEY_PASSWORD }}
-        if: github.ref == 'refs/heads/master'
-
-      - name: Upload AAB
-        id: uploadArtifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: app
-          path: app/build/outputs/bundle/**/*.aab
