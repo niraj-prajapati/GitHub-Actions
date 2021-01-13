@@ -12,7 +12,6 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      SIGNING_KEY: ${{secrets.SIGNING_KEY}}
       ALIAS: ${{secrets.ALIAS}}
       KEY_STORE_PASSWORD: ${{secrets.KEY_STORE_PASSWORD}}
       KEY_PASSWORD: ${{secrets.KEY_PASSWORD}}
@@ -45,16 +44,23 @@ jobs:
           versionCode: ${{github.run_number}}
           versionName: '1.0.${{github.run_number}}'
 
-      - name: Build with Gradle
-        id: build
-        run: ./gradlew build
+      - name: Run Workflow
+        id: generateKeystore
+        uses: timheuer/base64-to-file@v1
+        with:
+          fileName: 'keystore.jks'
+          encodedString: ${{secrets.SIGNING_KEY}}
 
       - name: Upload Release APK for Dev on TestFairy
         id: buildDevRelease
+        env:
+          SIGNING_KEY: ${{steps.generateKeystore.outputs.filePath}}
         run: ./gradlew testfairyDevRelease
         if: github.ref == 'refs/heads/dev'
 
       - name: Upload Release APK for Prod on TestFairy
         id: buildProdRelease
+        env:
+          SIGNING_KEY: ${{steps.generateKeystore.outputs.filePath}}
         run: ./gradlew testfairyProdRelease
         if: github.ref == 'refs/heads/master'
