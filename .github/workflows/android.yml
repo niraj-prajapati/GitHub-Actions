@@ -51,9 +51,9 @@ jobs:
           fileName: 'keystore.jks'
           encodedString: ${{secrets.SIGNING_KEY}}
 
-      - name: Build Debug APK
+      - name: Build Release APK
         id: buildRelease
-        run: ./gradlew assembleDebug
+        run: ./gradlew assembleRelease
 
       - name: Upload APK
         id: uploadArtifact
