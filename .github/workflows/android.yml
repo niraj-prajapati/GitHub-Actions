@@ -51,6 +51,17 @@ jobs:
           fileName: 'keystore.jks'
           encodedString: ${{secrets.SIGNING_KEY}}
 
+      - name: Build Debug APK
+        id: buildRelease
+        run: ./gradlew assembleDebug
+
+      - name: Upload APK
+        id: uploadArtifact
+        uses: actions/upload-artifact@v1
+        with:
+          name: app
+          path: app/build/outputs/apk/dev/debug/app-dev-debug.apk
+
       - name: Upload Release APK for Dev on TestFairy
         id: buildDevRelease
         env:
